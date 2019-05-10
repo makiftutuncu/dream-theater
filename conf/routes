@@ -1,1 +1,2 @@
-GET     /       com.github.makiftutuncu.dreamtheater.controllers.HomeController.home
+GET         /           com.github.makiftutuncu.dreamtheater.controllers.HomeController.home
+POST        /ping       com.github.makiftutuncu.dreamtheater.controllers.HomeController.ping
