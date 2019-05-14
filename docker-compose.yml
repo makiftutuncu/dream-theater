@@ -1,0 +1,18 @@
+version: '3'
+
+services:
+  dream-theater:
+    container_name: dream-theater
+    image: postgres:alpine
+    ports:
+      - 5432:5432
+    volumes:
+      - dt-volume:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=dt-user
+      - POSTGRES_PASSWORD=dt-pass
+      - POSTGRES_DB=dt
+
+volumes:
+  dt-volume:
+    driver: local

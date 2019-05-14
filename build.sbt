@@ -1,17 +1,19 @@
-name := """dream-theater"""
+name         := "dream-theater"
 organization := "com.github.makiftutuncu"
-
-version := "1.0-SNAPSHOT"
+version      := "0.1"
+scalaVersion := "2.12.8"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
-scalaVersion := "2.12.8"
+val anorm2         = "com.typesafe.play"      %% "anorm"              % "2.5.3"
+val postgresql42   = "org.postgresql"          % "postgresql"         % "42.2.5"
+val scalaTestPlay4 = "org.scalatestplus.play" %% "scalatestplus-play" % "4.0.2"  % Test
 
-libraryDependencies += guice
-libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "4.0.2" % Test
-
-// Adds additional packages into Twirl
-//TwirlKeys.templateImports += "com.github.makiftutuncu.controllers._"
-
-// Adds additional packages into conf/routes
-// play.sbt.routes.RoutesKeys.routesImport += "com.github.makiftutuncu.binders._"
+libraryDependencies ++= Seq(
+  anorm2,
+  evolutions,
+  guice,
+  jdbc,
+  postgresql42,
+  scalaTestPlay4
+)
