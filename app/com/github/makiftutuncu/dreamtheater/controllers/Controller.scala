@@ -6,37 +6,45 @@ import play.api.libs.json.{Json, Reads, Writes}
 import play.api.mvc._
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
-abstract class Controller(cc: ControllerComponents)(implicit ec: ExecutionContext) extends AbstractController(cc) with ActionUtils {
-  def LoggingAction[A: Writes](f: Context[AnyContent] => Future[A]): Action[AnyContent] =
+abstract class Controller(cc: ControllerComponents) extends AbstractController(cc) with ActionUtils {
+  def PublicAction[A](f: Context[AnyContent] => Future[A])(implicit ec: ExecutionContext, w: Writes[A]): Action[AnyContent] =
     Action.async { request: Request[AnyContent] =>
-      action(new Context(request))(f)
+      action(new Context(request))(ctx => f(ctx).map(Right.apply))
     }
 
-  def LoggingAction[A: Reads, B: Writes](f: Context[A] => Future[B]): Action[A] =
+  def PublicAction[A, B](f: Context[A] => Future[Either[APIError, B]])(implicit ec: ExecutionContext, r: Reads[A], w: Writes[B]): Action[A] =
     Action.async(parse.json[A]) { request: Request[A] =>
       action(new Context(request))(f)
     }
 
-  private def action[A, B: Writes](ctx: Context[A])(f: Context[A] => Future[B]): Future[Result] = {
-    logRequest(ctx)
+  private def action[A, B](ctx: Context[A])(f: Context[A] => Future[Either[APIError, B]])(implicit ec: ExecutionContext, w: Writes[B]): Future[Result] = {
+    def internalFail(apiError: APIError): Result = {
+      val json   = Json.obj("error" -> apiError)
+      val result = addHeaders(ctx, fail(apiError))
 
-    f(ctx).map { response: B =>
-      val json = Json.toJson(response)
+      logResponse(ctx, json, result)
+
+      result
+    }
+
+    def internalSucceed(value: B): Result = {
+      val json   = Json.toJson(value)
       val result = addHeaders(ctx, succeed(json))
 
       logResponse(ctx, json, result)
 
       result
+    }
+
+    logRequest(ctx)
+
+    f(ctx).map {
+      case Left(apiError) => internalFail(apiError)
+      case Right(value)   => internalSucceed(value)
     }.recover {
-      case t: Throwable =>
-        val apiError = APIError.from(t)
-        val json = Json.toJson(apiError)
-        val result = addHeaders(ctx, fail(apiError))
-
-        logResponse(ctx, json, result)
-
-        result
+      case NonFatal(t) => internalFail(APIError.from(t))
     }
   }
 

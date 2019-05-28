@@ -15,7 +15,7 @@ class HomeController @Inject()(cc: ControllerComponents) extends Controller(cc) 
     }
 
   val ping: Action[AnyContent] =
-    LoggingAction { implicit ctx: Context[AnyContent] =>
+    PublicAction { implicit ctx: Context[AnyContent] =>
       Future.successful("pong")
     }
 }

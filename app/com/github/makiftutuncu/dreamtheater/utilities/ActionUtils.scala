@@ -4,13 +4,14 @@ import com.github.makiftutuncu.dreamtheater.errors.APIError
 import play.api.Logging
 import play.api.http.HeaderNames
 import play.api.libs.json.{JsValue, Json, Writes}
-import play.api.mvc.Result
+import play.api.mvc.{RequestHeader, Result}
 import play.api.mvc.Results.{Ok, Status}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 trait ActionUtils extends Logging {
-  def fail(apiError: APIError): Result                          = Status(apiError.status)(Json.toJson(apiError))
+  def fail(apiError: APIError): Result                          = Status(apiError.status)(Json.obj("error" -> apiError))
   def succeed[A: Writes](value: A, status: Status = Ok): Result = status(Json.toJson(value))
 
   def result[A: Writes](result: Either[APIError, A], status: Status = Ok): Result =
@@ -21,7 +22,7 @@ trait ActionUtils extends Logging {
 
   def futureResult[A](futureResult: Future[Either[APIError, A]], status: Status = Ok)(implicit ec: ExecutionContext, w: Writes[A]): Future[Result] =
     futureResult.map(either => result(either, status)).recover {
-      case t: Throwable => fail(APIError.from(t))
+      case NonFatal(t) => fail(APIError.from(t))
     }
 
   def logRequest[A](ctx: Context[A]): Unit = {
@@ -36,8 +37,26 @@ trait ActionUtils extends Logging {
     logger.debug(sb.toString)
   }
 
+  def logRequest(request: RequestHeader): Unit = {
+    val sb = new StringBuilder(s"Request\n${request.method} ${request.path}")
+
+    appendHeaders(sb, request.headers.toMap)
+
+    logger.debug(sb.toString)
+  }
+
   def logResponse[A](ctx: Context[A], response: JsValue, result: Result): Unit = {
     val sb = new StringBuilder(s"Response(${ctx.requestId})\n${ctx.request.method} ${ctx.request.path}")
+
+    appendHeaders(sb, result.header.headers.mapValues(s => Seq(s)))
+
+    sb.append("\n").append(response)
+
+    logger.debug(sb.toString)
+  }
+
+  def logResponse(request: RequestHeader, response: JsValue, result: Result): Unit = {
+    val sb = new StringBuilder(s"Response\n${request.method} ${request.path}")
 
     appendHeaders(sb, result.header.headers.mapValues(s => Seq(s)))
 

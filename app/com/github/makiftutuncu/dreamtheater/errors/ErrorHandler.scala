@@ -9,11 +9,21 @@ import play.api.mvc.{RequestHeader, Result}
 import scala.concurrent.Future
 
 class ErrorHandler extends HttpErrorHandler with ActionUtils {
-  override def onClientError(request: RequestHeader, statusCode: Int, message: String): Future[Result] =
-    Future.successful(fail(APIError(statusCode, message, headerData(request), None)))
+  override def onClientError(request: RequestHeader, statusCode: Int, message: String): Future[Result] = {
+    logRequest(request)
+    val apiError = APIError(statusCode, message, headerData(request), None)
+    val result   = fail(apiError)
+    logResponse(request, Json.toJson(apiError), result)
+    Future.successful(result)
+  }
 
-  override def onServerError(request: RequestHeader, exception: Throwable): Future[Result] =
-    Future.successful(fail(APIError(INTERNAL_SERVER_ERROR, exception.getMessage, headerData(request), Some(exception))))
+  override def onServerError(request: RequestHeader, exception: Throwable): Future[Result] = {
+    logRequest(request)
+    val apiError = APIError(INTERNAL_SERVER_ERROR, exception.getMessage, headerData(request), Some(exception))
+    val result   = fail(apiError)
+    logResponse(request, Json.toJson(apiError), result)
+    Future.successful(result)
+  }
 
   private def headerData(request: RequestHeader): JsValue =
     request.headers.toSimpleMap.foldLeft(Json.obj()) {
