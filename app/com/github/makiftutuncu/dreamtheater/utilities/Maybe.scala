@@ -20,4 +20,10 @@ object Maybe {
 
   def flatMap[A, B](m: M[A])(f: A => M[B]): M[B]                                     = m.flatMap(f)
   def flatMapF[A, B](fm: FM[A])(f: A => FM[B])(implicit ec: ExecutionContext): FM[B] = fm.flatMap(m => m.fold(e => errorF(e), f))
+
+  def transformF[A, B](fm: FM[A])(f: A => M[B])(implicit ec: ExecutionContext): FM[B] =
+    fm.map {
+      case Left(e)  => error(e)
+      case Right(a) => f(a)
+    }
 }

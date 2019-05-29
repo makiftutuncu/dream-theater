@@ -17,6 +17,8 @@ import scala.concurrent.ExecutionContext
 class UserService @Inject()(passwordUtils: PasswordUtils,
                             userRepository: UserRepository,
                             sessionService: SessionService) extends Service with Logging {
+  def getById(id: UUID)(implicit ec: ExecutionContext): FM[Option[User]] = userRepository.getById(id)
+
   def register(request: RegisterUserRequest)(implicit ec: ExecutionContext): FM[(User, Session)] = {
     val salt = passwordUtils.generateSalt()
 

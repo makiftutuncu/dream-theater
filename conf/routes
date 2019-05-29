@@ -3,3 +3,4 @@ POST        /ping       com.github.makiftutuncu.dreamtheater.controllers.HomeCon
 
 POST        /users/register     com.github.makiftutuncu.dreamtheater.controllers.UserController.register
 POST        /users/login        com.github.makiftutuncu.dreamtheater.controllers.UserController.login
+GET         /users/me           com.github.makiftutuncu.dreamtheater.controllers.UserController.me

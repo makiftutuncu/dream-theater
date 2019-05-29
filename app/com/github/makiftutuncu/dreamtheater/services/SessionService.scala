@@ -13,6 +13,8 @@ import scala.concurrent.ExecutionContext
 
 @Singleton
 class SessionService @Inject()(sessionRepository: SessionRepository) extends Service with Logging {
+  def getByToken(token: String)(implicit ec: ExecutionContext): FM[Option[Session]] = sessionRepository.getByToken(token)
+
   def create(userId: UUID)(implicit ec: ExecutionContext): FM[Session] =
     sessionRepository.insert(
       Session(

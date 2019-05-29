@@ -4,7 +4,7 @@ import java.util.UUID
 
 import play.api.mvc.{Request, WrappedRequest}
 
-class Context[T](val request: Request[T]) extends WrappedRequest[T](request) {
+class Context[A](val request: Request[A]) extends WrappedRequest[A](request) {
   val requestId: String = request.headers.get(Context.REQUEST_ID_HEADER_NAME).getOrElse(UUID.randomUUID.toString)
 }
 

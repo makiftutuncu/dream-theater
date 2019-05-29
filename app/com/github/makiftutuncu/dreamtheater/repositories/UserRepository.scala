@@ -1,6 +1,7 @@
 package com.github.makiftutuncu.dreamtheater.repositories
 
 import java.time.ZoneOffset
+import java.util.UUID
 
 import anorm._
 import com.github.makiftutuncu.dreamtheater.errors.Errors
@@ -13,6 +14,24 @@ import scala.concurrent.ExecutionContext
 
 @Singleton
 class UserRepository @Inject()(db: Database) extends Repository(db) {
+  def getById(id: UUID)(implicit ec: ExecutionContext): FM[Option[User]] =
+    withConnection { implicit connection =>
+      val sql =
+        SQL(
+          """
+            |SELECT *
+            |FROM users
+            |WHERE id = {id}::uuid AND deleted_at IS NULL
+          """.stripMargin
+        ).on(
+          NamedParameter("id", id)
+        )
+
+      sql.executeQuery().as(User.rowParser.singleOpt)
+    } { throwable =>
+      Errors.database(s"Cannot get user by id '$id'", throwable)
+    }
+
   def getByEmail(email: String)(implicit ec: ExecutionContext): FM[Option[User]] =
     withConnection { implicit connection =>
       val sql =

@@ -4,6 +4,8 @@ import play.api.http.Status
 import play.api.libs.json.JsNull
 
 object Errors {
+  def unauthorized(details: String): APIError = APIError(Status.UNAUTHORIZED, details, JsNull, None)
+
   val invalidLogin: APIError = APIError(Status.UNAUTHORIZED, s"Invalid login credentials!", JsNull, None)
 
   def database(details: String): APIError               = APIError(Status.INTERNAL_SERVER_ERROR, details, JsNull, None)

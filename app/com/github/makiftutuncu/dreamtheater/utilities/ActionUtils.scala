@@ -7,12 +7,14 @@ import play.api.libs.json.{JsValue, Json, Writes}
 import play.api.mvc.Results.{Ok, Status}
 import play.api.mvc.{RequestHeader, Result}
 
+import scala.language.higherKinds
+
 trait ActionUtils extends Logging {
   def fail(apiError: APIError): Result = Status(apiError.status)(apiError.asJson)
 
   def succeed[A: Writes](value: A, status: Status = Ok): Result = status(Json.toJson(value))
 
-  def logRequest[A](ctx: Context[A]): Unit = {
+  def logRequest[A, C[_] <: Context[_]](ctx: C[A]): Unit = {
     val sb = new StringBuilder(s"Request(${ctx.requestId})\n${ctx.request.method} ${ctx.request.path}")
 
     appendHeaders(sb, ctx.request.headers.toMap)
@@ -32,7 +34,7 @@ trait ActionUtils extends Logging {
     logger.info(sb.toString)
   }
 
-  def logResponse[A](ctx: Context[A], response: JsValue, result: Result): Unit = {
+  def logResponse[A, C[_] <: Context[_]](ctx: C[A], response: JsValue, result: Result): Unit = {
     val sb = new StringBuilder(s"Response(${ctx.requestId})\n${ctx.request.method} ${ctx.request.path}")
 
     appendHeaders(sb, result.header.headers.mapValues(s => Seq(s)))
