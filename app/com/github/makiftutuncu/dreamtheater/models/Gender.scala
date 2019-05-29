@@ -1,10 +1,10 @@
 package com.github.makiftutuncu.dreamtheater.models
 
-sealed trait Gender extends EnumItem
+sealed abstract class Gender(override val key: String) extends EnumItem
 
 object Gender extends Enum[Gender] {
-  final case object Female extends Gender { override val index: Int = 0 }
-  final case object Male   extends Gender { override val index: Int = 1 }
+  final case object Female extends Gender("female")
+  final case object Male   extends Gender("male")
 
   override val all: List[Gender] = List(Female, Male)
 }
