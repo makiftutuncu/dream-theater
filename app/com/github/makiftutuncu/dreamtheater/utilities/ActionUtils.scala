@@ -34,7 +34,7 @@ trait ActionUtils extends Logging {
       sb.append("\n").append(ctx.request.body)
     }
 
-    logger.debug(sb.toString)
+    logger.info(sb.toString)
   }
 
   def logRequest(request: RequestHeader): Unit = {
@@ -42,7 +42,7 @@ trait ActionUtils extends Logging {
 
     appendHeaders(sb, request.headers.toMap)
 
-    logger.debug(sb.toString)
+    logger.info(sb.toString)
   }
 
   def logResponse[A](ctx: Context[A], response: JsValue, result: Result): Unit = {
@@ -52,7 +52,7 @@ trait ActionUtils extends Logging {
 
     sb.append("\n").append(response)
 
-    logger.debug(sb.toString)
+    logger.info(sb.toString)
   }
 
   def logResponse(request: RequestHeader, response: JsValue, result: Result): Unit = {
@@ -62,7 +62,7 @@ trait ActionUtils extends Logging {
 
     sb.append("\n").append(response)
 
-    logger.debug(sb.toString)
+    logger.info(sb.toString)
   }
 
   val headersOfInterest: Set[String] =

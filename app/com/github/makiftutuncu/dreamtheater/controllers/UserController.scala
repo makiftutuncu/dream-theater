@@ -19,6 +19,6 @@ class UserController @Inject()(userService: UserService,
 
   val login: Action[LoginUserRequest] =
     PublicAction[LoginUserRequest, User] { implicit ctx: Context[LoginUserRequest] =>
-      userService.login(ctx.body)
+      userService.login(ctx.body).map(_.map(_._1))
     }
 }

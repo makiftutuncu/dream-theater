@@ -14,6 +14,16 @@ CREATE TABLE "users"(
     "deleted_at" TIMESTAMPTZ(3)
 );
 
+CREATE TABLE "sessions"(
+    "id"         UUID PRIMARY KEY,
+    "user_id"    UUID NOT NULL REFERENCES "users"("id"),
+    "token"      TEXT NOT NULL UNIQUE,
+    "created_at" TIMESTAMPTZ(3) NOT NULL,
+    "updated_at" TIMESTAMPTZ(3) NOT NULL,
+    "deleted_at" TIMESTAMPTZ(3)
+);
+
 -- !Downs
 
+DROP TABLE "sessions";
 DROP TABLE "users";
