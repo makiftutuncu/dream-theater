@@ -1,18 +1,17 @@
 package com.github.makiftutuncu.dreamtheater.repositories
 
 import anorm._
-import com.github.makiftutuncu.dreamtheater.errors.{APIError, Errors}
+import com.github.makiftutuncu.dreamtheater.errors.Errors
 import com.github.makiftutuncu.dreamtheater.models.Session
+import com.github.makiftutuncu.dreamtheater.utilities.Maybe.FM
 import javax.inject.{Inject, Singleton}
-import play.api.Logging
 import play.api.db.Database
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
+import scala.concurrent.ExecutionContext
 
 @Singleton
-class SessionRepository @Inject()(db: Database) extends Repository(db) with Logging {
-  def getByToken(token: String)(implicit ec: ExecutionContext): Future[Either[APIError, Option[Session]]] =
+class SessionRepository @Inject()(db: Database) extends Repository(db) {
+  def getByToken(token: String)(implicit ec: ExecutionContext): FM[Option[Session]] =
     withConnection { implicit connection =>
       val sql =
         SQL(
@@ -25,15 +24,12 @@ class SessionRepository @Inject()(db: Database) extends Repository(db) with Logg
           NamedParameter("token", token)
         )
 
-      Right(sql.executeQuery().as(Session.sessionRowParser.singleOpt))
-    }.recover {
-      case NonFatal(t) =>
-        val error = Errors.database("Cannot get session by token", t)
-        logger.error(error.message, error)
-        Left(error)
+      sql.executeQuery().as(Session.rowParser.singleOpt)
+    } { throwable =>
+      Errors.database("Cannot get session by token", throwable)
     }
 
-  def insert(session: Session)(implicit ec: ExecutionContext): Future[Either[APIError, Session]] =
+  def insert(session: Session)(implicit ec: ExecutionContext): FM[Session] =
     withConnection { implicit connection =>
       val sql =
         SQL(
@@ -52,11 +48,8 @@ class SessionRepository @Inject()(db: Database) extends Repository(db) with Logg
 
       sql.executeUpdate()
 
-      Right(session)
-    }.recover {
-      case NonFatal(t) =>
-        val error = Errors.database(s"Cannot insert session for user '${session.userId}'", t)
-        logger.error(error.message, error)
-        Left(error)
+      session
+    } { throwable =>
+      Errors.database(s"Cannot insert session for user '${session.userId}'", throwable)
     }
 }

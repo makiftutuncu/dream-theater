@@ -1,6 +1,7 @@
 package com.github.makiftutuncu.dreamtheater.controllers
 
 import com.github.makiftutuncu.dreamtheater.errors.APIError
+import com.github.makiftutuncu.dreamtheater.utilities.Maybe.FM
 import com.github.makiftutuncu.dreamtheater.utilities.{ActionUtils, Context}
 import play.api.libs.json.{Json, Reads, Writes}
 import play.api.mvc._
@@ -14,12 +15,12 @@ abstract class Controller(cc: ControllerComponents) extends AbstractController(c
       action(new Context(request))(ctx => f(ctx).map(Right.apply))
     }
 
-  def PublicAction[A, B](f: Context[A] => Future[Either[APIError, B]])(implicit ec: ExecutionContext, r: Reads[A], w: Writes[B]): Action[A] =
+  def PublicAction[A, B](f: Context[A] => FM[B])(implicit ec: ExecutionContext, r: Reads[A], w: Writes[B]): Action[A] =
     Action.async(parse.json[A]) { request: Request[A] =>
       action(new Context(request))(f)
     }
 
-  private def action[A, B](ctx: Context[A])(f: Context[A] => Future[Either[APIError, B]])(implicit ec: ExecutionContext, w: Writes[B]): Future[Result] = {
+  private def action[A, B](ctx: Context[A])(f: Context[A] => FM[B])(implicit ec: ExecutionContext, w: Writes[B]): Future[Result] = {
     def internalFail(apiError: APIError): Result = {
       val json   = Json.obj("error" -> apiError)
       val result = addHeaders(ctx, fail(apiError))

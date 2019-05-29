@@ -18,12 +18,12 @@ final case class Session(override val id: UUID,
 }
 
 object Session {
-  implicit val sessionWrites: Writes[Session] =
+  implicit val writes: Writes[Session] =
     Json.writes[Session].transform { json: JsObject =>
       json - "token" - "deletedAt"
     }
 
-  implicit val sessionRowParser: RowParser[Session] =
+  implicit val rowParser: RowParser[Session] =
     RowParser[Session] { row =>
       Try {
         val user = Session(

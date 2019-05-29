@@ -25,12 +25,12 @@ final case class User(override val id: UUID,
 }
 
 object User {
-  implicit val userWrites: Writes[User] =
+  implicit val writes: Writes[User] =
     Json.writes[User].transform { json: JsObject =>
       json - "password" - "salt" - "deletedAt"
     }
 
-  implicit val userRowParser: RowParser[User] =
+  implicit val rowParser: RowParser[User] =
     RowParser[User] { row =>
       Try {
         val user = User(

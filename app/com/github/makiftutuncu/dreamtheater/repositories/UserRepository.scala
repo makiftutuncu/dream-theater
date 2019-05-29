@@ -3,18 +3,17 @@ package com.github.makiftutuncu.dreamtheater.repositories
 import java.time.ZoneOffset
 
 import anorm._
-import com.github.makiftutuncu.dreamtheater.errors.{APIError, Errors}
+import com.github.makiftutuncu.dreamtheater.errors.Errors
 import com.github.makiftutuncu.dreamtheater.models.User
+import com.github.makiftutuncu.dreamtheater.utilities.Maybe.FM
 import javax.inject.{Inject, Singleton}
-import play.api.Logging
 import play.api.db.Database
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
+import scala.concurrent.ExecutionContext
 
 @Singleton
-class UserRepository @Inject()(db: Database) extends Repository(db) with Logging {
-  def getByEmail(email: String)(implicit ec: ExecutionContext): Future[Either[APIError, Option[User]]] =
+class UserRepository @Inject()(db: Database) extends Repository(db) {
+  def getByEmail(email: String)(implicit ec: ExecutionContext): FM[Option[User]] =
     withConnection { implicit connection =>
       val sql =
         SQL(
@@ -27,15 +26,12 @@ class UserRepository @Inject()(db: Database) extends Repository(db) with Logging
           NamedParameter("email", email)
         )
 
-      Right(sql.executeQuery().as(User.userRowParser.singleOpt))
-    }.recover {
-      case NonFatal(t) =>
-        val error = Errors.database(s"Cannot get user by email '$email'", t)
-        logger.error(error.message, error)
-        Left(error)
+      sql.executeQuery().as(User.rowParser.singleOpt)
+    } { throwable =>
+      Errors.database(s"Cannot get user by email '$email'", throwable)
     }
 
-  def insert(user: User)(implicit ec: ExecutionContext): Future[Either[APIError, User]] =
+  def insert(user: User)(implicit ec: ExecutionContext): FM[User] =
     withConnection { implicit connection =>
       val sql =
         SQL(
@@ -59,11 +55,8 @@ class UserRepository @Inject()(db: Database) extends Repository(db) with Logging
 
       sql.executeUpdate()
 
-      Right(user)
-    }.recover {
-      case NonFatal(t) =>
-        val error = Errors.database(s"Cannot insert user '${user.email}'", t)
-        logger.error(error.message, error)
-        Left(error)
+      user
+    } { throwable =>
+      Errors.database(s"Cannot insert user '${user.email}'", throwable)
     }
 }

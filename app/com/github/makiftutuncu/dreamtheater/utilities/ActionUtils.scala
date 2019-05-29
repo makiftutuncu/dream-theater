@@ -1,11 +1,12 @@
 package com.github.makiftutuncu.dreamtheater.utilities
 
 import com.github.makiftutuncu.dreamtheater.errors.APIError
+import com.github.makiftutuncu.dreamtheater.utilities.Maybe.{FM, M}
 import play.api.Logging
 import play.api.http.HeaderNames
 import play.api.libs.json.{JsValue, Json, Writes}
-import play.api.mvc.{RequestHeader, Result}
 import play.api.mvc.Results.{Ok, Status}
+import play.api.mvc.{RequestHeader, Result}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -14,13 +15,13 @@ trait ActionUtils extends Logging {
   def fail(apiError: APIError): Result                          = Status(apiError.status)(Json.obj("error" -> apiError))
   def succeed[A: Writes](value: A, status: Status = Ok): Result = status(Json.toJson(value))
 
-  def result[A: Writes](result: Either[APIError, A], status: Status = Ok): Result =
+  def result[A: Writes](result: M[A], status: Status = Ok): Result =
     result match {
       case Left(apiError) => fail(apiError)
       case Right(value)   => succeed(value)
     }
 
-  def futureResult[A](futureResult: Future[Either[APIError, A]], status: Status = Ok)(implicit ec: ExecutionContext, w: Writes[A]): Future[Result] =
+  def futureResult[A](futureResult: FM[A], status: Status = Ok)(implicit ec: ExecutionContext, w: Writes[A]): Future[Result] =
     futureResult.map(either => result(either, status)).recover {
       case NonFatal(t) => fail(APIError.from(t))
     }
