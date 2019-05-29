@@ -17,10 +17,10 @@ import scala.concurrent.ExecutionContext
 class UserService @Inject()(passwordUtils: PasswordUtils,
                             userRepository: UserRepository,
                             sessionService: SessionService) extends Service with Logging {
-  def register(request: RegisterUserRequest)(implicit ec: ExecutionContext): FM[User] = {
+  def register(request: RegisterUserRequest)(implicit ec: ExecutionContext): FM[(User, Session)] = {
     val salt = passwordUtils.generateSalt()
 
-    val user = User(
+    val newUser = User(
       id        = UUID.randomUUID,
       email     = request.email,
       password  = passwordUtils.hash(request.password, salt),
@@ -34,7 +34,11 @@ class UserService @Inject()(passwordUtils: PasswordUtils,
       deletedAt = None
     )
 
-    userRepository.insert(user)
+    Maybe.flatMapF(userRepository.insert(newUser)) { user =>
+      Maybe.mapF(sessionService.create(user.id)) { session =>
+        user -> session
+      }
+    }
   }
 
   def login(request: LoginUserRequest)(implicit ec: ExecutionContext): FM[(User, Session)] =

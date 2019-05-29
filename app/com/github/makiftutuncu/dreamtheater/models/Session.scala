@@ -18,6 +18,8 @@ final case class Session(override val id: UUID,
 }
 
 object Session {
+  val AUTH_TOKEN_HEADER_NAME = "X-Auth-Token"
+
   implicit val writes: Writes[Session] =
     Json.writes[Session].transform { json: JsObject =>
       json - "token" - "deletedAt"

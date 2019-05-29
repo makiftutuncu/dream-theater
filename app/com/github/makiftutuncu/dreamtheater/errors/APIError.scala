@@ -6,7 +6,9 @@ import play.api.libs.json.{JsNull, JsValue, Json, Writes}
 final case class APIError(status: Int,
                           message: String,
                           data: JsValue,
-                          maybeCause: Option[Throwable]) extends Exception(message, maybeCause.orNull, false, maybeCause.isDefined)
+                          maybeCause: Option[Throwable]) extends Exception(message, maybeCause.orNull, false, maybeCause.isDefined) {
+  lazy val asJson: JsValue = Json.obj("error" -> Json.toJson(this))
+}
 
 object APIError {
   implicit val apiErrorWrites: Writes[APIError] =

@@ -2,50 +2,44 @@ package com.github.makiftutuncu.dreamtheater.controllers
 
 import com.github.makiftutuncu.dreamtheater.errors.APIError
 import com.github.makiftutuncu.dreamtheater.utilities.Maybe.FM
-import com.github.makiftutuncu.dreamtheater.utilities.{ActionUtils, Context}
-import play.api.libs.json.{Json, Reads, Writes}
+import com.github.makiftutuncu.dreamtheater.utilities.{ActionUtils, Context, Maybe}
+import play.api.libs.json.{JsValue, Reads}
 import play.api.mvc._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 abstract class Controller(cc: ControllerComponents) extends AbstractController(cc) with ActionUtils {
-  def PublicAction[A](f: Context[AnyContent] => Future[A])(implicit ec: ExecutionContext, w: Writes[A]): Action[AnyContent] =
+  def PublicAction(f: Context[AnyContent] => Future[(JsValue, Result)])(implicit ec: ExecutionContext): Action[AnyContent] =
     Action.async { request: Request[AnyContent] =>
-      action(new Context(request))(ctx => f(ctx).map(Right.apply))
+      action(new Context(request)) { ctx =>
+        f(ctx).map(Maybe.value)
+      }
     }
 
-  def PublicAction[A, B](f: Context[A] => FM[B])(implicit ec: ExecutionContext, r: Reads[A], w: Writes[B]): Action[A] =
+  def PublicAction[A](f: Context[A] => FM[(JsValue, Result)])(implicit ec: ExecutionContext, r: Reads[A]): Action[A] =
     Action.async(parse.json[A]) { request: Request[A] =>
-      action(new Context(request))(f)
+      action(new Context(request)) { ctx =>
+        f(ctx)
+      }
     }
 
-  private def action[A, B](ctx: Context[A])(f: Context[A] => FM[B])(implicit ec: ExecutionContext, w: Writes[B]): Future[Result] = {
-    def internalFail(apiError: APIError): Result = {
-      val json   = Json.obj("error" -> apiError)
-      val result = addHeaders(ctx, fail(apiError))
-
-      logResponse(ctx, json, result)
-
-      result
-    }
-
-    def internalSucceed(value: B): Result = {
-      val json   = Json.toJson(value)
-      val result = addHeaders(ctx, succeed(json))
-
-      logResponse(ctx, json, result)
-
-      result
+  private def action[A](ctx: Context[A])(f: Context[A] => FM[(JsValue, Result)])(implicit ec: ExecutionContext): Future[Result] = {
+    def complete(json: JsValue, result: Result): Result = {
+      val finalResult = addHeaders(ctx, addHeaders(ctx, result))
+      logResponse(ctx, json, finalResult)
+      finalResult
     }
 
     logRequest(ctx)
 
     f(ctx).map {
-      case Left(apiError) => internalFail(apiError)
-      case Right(value)   => internalSucceed(value)
+      case Left(apiError)        => complete(apiError.asJson, fail(apiError))
+      case Right((json, result)) => complete(json, result)
     }.recover {
-      case NonFatal(t) => internalFail(APIError.from(t))
+      case NonFatal(t) =>
+        val apiError = APIError.from(t)
+        complete(apiError.asJson, fail(apiError))
     }
   }
 
