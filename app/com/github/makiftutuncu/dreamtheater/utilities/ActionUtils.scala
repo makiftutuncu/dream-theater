@@ -4,15 +4,15 @@ import com.github.makiftutuncu.dreamtheater.errors.APIError
 import play.api.Logging
 import play.api.http.HeaderNames
 import play.api.libs.json.{JsValue, Json, Writes}
-import play.api.mvc.Results.{Ok, Status}
-import play.api.mvc.{RequestHeader, Result}
+import play.api.mvc.Results.Status
+import play.api.mvc.{RequestHeader, Result, Results}
 
 import scala.language.higherKinds
 
 trait ActionUtils extends Logging {
   def fail(apiError: APIError): Result = Status(apiError.status)(apiError.asJson)
 
-  def succeed[A: Writes](value: A, status: Status = Ok): Result = status(Json.toJson(value))
+  def succeed[A: Writes](value: A, status: Status = Results.Ok): Result = status(Json.toJson(value))
 
   def logRequest[A, C[_] <: Context[_]](ctx: C[A]): Unit = {
     val sb = new StringBuilder(s"Request(${ctx.requestId})\n${ctx.request.method} ${ctx.request.path}")

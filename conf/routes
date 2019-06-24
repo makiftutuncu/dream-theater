@@ -4,3 +4,6 @@ POST        /ping       com.github.makiftutuncu.dreamtheater.controllers.HomeCon
 POST        /users/register     com.github.makiftutuncu.dreamtheater.controllers.UserController.register
 POST        /users/login        com.github.makiftutuncu.dreamtheater.controllers.UserController.login
 GET         /users/me           com.github.makiftutuncu.dreamtheater.controllers.UserController.me
+
+GET         /dreams     com.github.makiftutuncu.dreamtheater.controllers.DreamController.getAll(page: Option[Int], pageCount: Option[Int])
+POST        /dreams     com.github.makiftutuncu.dreamtheater.controllers.DreamController.create

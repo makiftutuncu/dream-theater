@@ -15,15 +15,15 @@ import scala.util.control.NonFatal
 abstract class Controller(userService: UserService,
                           sessionService: SessionService,
                           cc: ControllerComponents) extends AbstractController(cc) with ActionUtils {
-  def publicAction(f: Context[AnyContent] => Future[(JsValue, Result)])(implicit ec: ExecutionContext): Action[AnyContent] =
+  def publicAction(f: Context[AnyContent] => FM[(JsValue, Result)])(implicit ec: ExecutionContext): Action[AnyContent] =
     Action.async { request: Request[AnyContent] =>
       val context = new Context(request)
       action[AnyContent, Context](context) { ctx =>
-        f(ctx).map(Maybe.value)
+        f(ctx)
       }
     }
 
-  def publicAction[A](f: Context[A] => FM[(JsValue, Result)])(implicit ec: ExecutionContext, r: Reads[A]): Action[A] =
+  def publicActionWithBody[A](f: Context[A] => FM[(JsValue, Result)])(implicit ec: ExecutionContext, r: Reads[A]): Action[A] =
     Action.async(parse.json[A]) { request: Request[A] =>
       val context = new Context(request)
       action[A, Context](context) { ctx =>
@@ -31,7 +31,7 @@ abstract class Controller(userService: UserService,
       }
     }
 
-  def privateAction(f: UserContext[AnyContent] => Future[(JsValue, Result)])(implicit ec: ExecutionContext): Action[AnyContent] =
+  def privateAction(f: UserContext[AnyContent] => FM[(JsValue, Result)])(implicit ec: ExecutionContext): Action[AnyContent] =
     Action.async { request: Request[AnyContent] =>
       getUserContext(request).flatMap {
         case Left(error) =>
@@ -39,12 +39,12 @@ abstract class Controller(userService: UserService,
 
         case Right(context) =>
           action[AnyContent, UserContext](context) { ctx =>
-            f(ctx).map(Maybe.value)
+            f(ctx)
           }
       }
     }
 
-  def privateAction[A](f: UserContext[A] => FM[(JsValue, Result)])(implicit ec: ExecutionContext, r: Reads[A]): Action[A] =
+  def privateActionWithBody[A](f: UserContext[A] => FM[(JsValue, Result)])(implicit ec: ExecutionContext, r: Reads[A]): Action[A] =
     Action.async(parse.json[A]) { request: Request[A] =>
       getUserContext(request).flatMap {
         case Left(error) =>

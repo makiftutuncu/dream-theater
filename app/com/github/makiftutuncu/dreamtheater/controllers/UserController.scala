@@ -9,14 +9,13 @@ import play.api.libs.json.Json
 import play.api.mvc._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 @Singleton
 class UserController @Inject()(userService: UserService,
                                sessionService: SessionService,
                                cc: ControllerComponents) extends Controller(userService, sessionService, cc) {
   val register: Action[RegisterUserRequest] =
-    publicAction { implicit ctx: Context[RegisterUserRequest] =>
+    publicActionWithBody { implicit ctx: Context[RegisterUserRequest] =>
       Maybe.mapF(userService.register(ctx.body)) {
         case (user, session) =>
           val json   = Json.toJson(user)
@@ -27,7 +26,7 @@ class UserController @Inject()(userService: UserService,
     }
 
   val login: Action[LoginUserRequest] =
-    publicAction { implicit ctx: Context[LoginUserRequest] =>
+    publicActionWithBody { implicit ctx: Context[LoginUserRequest] =>
       Maybe.mapF(userService.login(ctx.body)) {
         case (user, session) =>
           val json   = Json.toJson(user)
@@ -42,6 +41,6 @@ class UserController @Inject()(userService: UserService,
       val json   = Json.toJson(ctx.user)
       val result = succeed(json)
 
-      Future.successful(json -> result)
+      Maybe.valueF(json -> result)
     }
 }
