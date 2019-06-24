@@ -3,7 +3,7 @@ package com.github.makiftutuncu.dreamtheater.models
 import java.time.ZonedDateTime
 import java.util.UUID
 
-import anorm.{RowParser, SqlMappingError, Success}
+import anorm.{RowParser, SqlMappingError}
 import play.api.libs.json.{JsObject, Json, Writes}
 
 import scala.util.Try
@@ -20,15 +20,15 @@ final case class Session(override val id: UUID,
 object Session {
   val AUTH_TOKEN_HEADER_NAME = "X-Auth-Token"
 
-  implicit val writes: Writes[Session] =
+  implicit val sessionWrites: Writes[Session] =
     Json.writes[Session].transform { json: JsObject =>
       json - "token" - "deletedAt"
     }
 
-  implicit val rowParser: RowParser[Session] =
+  implicit val sessionRowParser: RowParser[Session] =
     RowParser[Session] { row =>
       Try {
-        val user = Session(
+        Session(
           row[UUID]("id"),
           row[UUID]("user_id"),
           row[String]("token"),
@@ -36,11 +36,9 @@ object Session {
           row[ZonedDateTime]("updated_at"),
           row[Option[ZonedDateTime]]("deleted_at")
         )
-
-        Success(user)
       }.fold(
         t => anorm.Error(SqlMappingError(t.getMessage)),
-        identity
+        s => anorm.Success(s)
       )
     }
 }

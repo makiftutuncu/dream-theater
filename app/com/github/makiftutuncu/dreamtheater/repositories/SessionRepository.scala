@@ -3,6 +3,7 @@ package com.github.makiftutuncu.dreamtheater.repositories
 import anorm._
 import com.github.makiftutuncu.dreamtheater.errors.Errors
 import com.github.makiftutuncu.dreamtheater.models.Session
+import com.github.makiftutuncu.dreamtheater.models.Session.sessionRowParser
 import com.github.makiftutuncu.dreamtheater.utilities.Maybe.FM
 import javax.inject.{Inject, Singleton}
 import play.api.db.Database
@@ -16,7 +17,7 @@ class SessionRepository @Inject()(db: Database) extends Repository(db) {
       val sql =
         SQL(
           """
-            |SELECT *
+            |SELECT id, user_id, token, created_at, updated_at, deleted_at
             |FROM sessions
             |WHERE token = {token} AND deleted_at IS NULL
           """.stripMargin
@@ -24,7 +25,7 @@ class SessionRepository @Inject()(db: Database) extends Repository(db) {
           NamedParameter("token", token)
         )
 
-      sql.executeQuery().as(Session.rowParser.singleOpt)
+      sql.executeQuery().as(sessionRowParser.singleOpt)
     } { throwable =>
       Errors.database("Cannot get session by token", throwable)
     }

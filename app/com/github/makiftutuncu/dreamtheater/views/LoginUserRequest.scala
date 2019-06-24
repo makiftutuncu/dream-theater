@@ -7,9 +7,9 @@ final case class LoginUserRequest(email: String, password: String) {
 }
 
 object LoginUserRequest {
-  implicit val reads: Reads[LoginUserRequest] = Json.reads[LoginUserRequest]
+  implicit val loginUserRequestReads: Reads[LoginUserRequest] = Json.reads[LoginUserRequest]
 
-  implicit val writes: Writes[LoginUserRequest] =
+  implicit val loginUserRequestWrites: Writes[LoginUserRequest] =
     Json.writes[LoginUserRequest].transform { json: JsObject =>
       json - "password"
     }

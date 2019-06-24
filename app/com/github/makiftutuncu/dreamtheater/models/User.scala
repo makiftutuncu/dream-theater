@@ -3,7 +3,7 @@ package com.github.makiftutuncu.dreamtheater.models
 import java.time.{LocalDate, ZonedDateTime}
 import java.util.UUID
 
-import anorm.{RowParser, SqlMappingError, Success}
+import anorm.{RowParser, SqlMappingError}
 import play.api.libs.json.{JsObject, Json, Writes}
 
 import scala.util.Try
@@ -25,15 +25,15 @@ final case class User(override val id: UUID,
 }
 
 object User {
-  implicit val writes: Writes[User] =
+  implicit val userWrites: Writes[User] =
     Json.writes[User].transform { json: JsObject =>
       json - "password" - "salt" - "deletedAt"
     }
 
-  implicit val rowParser: RowParser[User] =
+  implicit val userRowParser: RowParser[User] =
     RowParser[User] { row =>
       Try {
-        val user = User(
+        User(
           row[UUID]("id"),
           row[String]("email"),
           row[String]("password"),
@@ -46,11 +46,9 @@ object User {
           row[ZonedDateTime]("updated_at"),
           row[Option[ZonedDateTime]]("deleted_at")
         )
-
-        Success(user)
       }.fold(
         t => anorm.Error(SqlMappingError(t.getMessage)),
-        identity
+        u => anorm.Success(u)
       )
     }
 }

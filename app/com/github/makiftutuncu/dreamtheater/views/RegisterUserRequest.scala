@@ -15,9 +15,9 @@ final case class RegisterUserRequest(email: String,
 }
 
 object RegisterUserRequest {
-  implicit val reads: Reads[RegisterUserRequest] = Json.reads[RegisterUserRequest]
+  implicit val registerUserRequestReads: Reads[RegisterUserRequest] = Json.reads[RegisterUserRequest]
 
-  implicit val writes: Writes[RegisterUserRequest] =
+  implicit val registerUserRequestWrites: Writes[RegisterUserRequest] =
     Json.writes[RegisterUserRequest].transform { json: JsObject =>
       json - "password"
     }

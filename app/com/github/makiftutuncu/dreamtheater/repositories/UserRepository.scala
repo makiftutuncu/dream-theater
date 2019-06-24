@@ -6,6 +6,7 @@ import java.util.UUID
 import anorm._
 import com.github.makiftutuncu.dreamtheater.errors.Errors
 import com.github.makiftutuncu.dreamtheater.models.User
+import com.github.makiftutuncu.dreamtheater.models.User.userRowParser
 import com.github.makiftutuncu.dreamtheater.utilities.Maybe.FM
 import javax.inject.{Inject, Singleton}
 import play.api.db.Database
@@ -19,7 +20,7 @@ class UserRepository @Inject()(db: Database) extends Repository(db) {
       val sql =
         SQL(
           """
-            |SELECT *
+            |SELECT id, email, password, salt, first_name, last_name, gender, birth_date, created_at, updated_at, deleted_at
             |FROM users
             |WHERE id = {id}::uuid AND deleted_at IS NULL
           """.stripMargin
@@ -27,7 +28,7 @@ class UserRepository @Inject()(db: Database) extends Repository(db) {
           NamedParameter("id", id)
         )
 
-      sql.executeQuery().as(User.rowParser.singleOpt)
+      sql.executeQuery().as(userRowParser.singleOpt)
     } { throwable =>
       Errors.database(s"Cannot get user by id '$id'", throwable)
     }
@@ -37,7 +38,7 @@ class UserRepository @Inject()(db: Database) extends Repository(db) {
       val sql =
         SQL(
           """
-            |SELECT *
+            |SELECT id, email, password, salt, first_name, last_name, gender, birth_date, created_at, updated_at, deleted_at
             |FROM users
             |WHERE email = {email} AND deleted_at IS NULL
           """.stripMargin
@@ -45,7 +46,7 @@ class UserRepository @Inject()(db: Database) extends Repository(db) {
           NamedParameter("email", email)
         )
 
-      sql.executeQuery().as(User.rowParser.singleOpt)
+      sql.executeQuery().as(userRowParser.singleOpt)
     } { throwable =>
       Errors.database(s"Cannot get user by email '$email'", throwable)
     }
