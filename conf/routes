@@ -1,5 +1,5 @@
 GET         /           com.github.makiftutuncu.dreamtheater.controllers.HomeController.home
-POST        /ping       com.github.makiftutuncu.dreamtheater.controllers.HomeController.ping
+GET         /ping       com.github.makiftutuncu.dreamtheater.controllers.HomeController.ping
 
 POST        /users/register     com.github.makiftutuncu.dreamtheater.controllers.UserController.register
 POST        /users/login        com.github.makiftutuncu.dreamtheater.controllers.UserController.login

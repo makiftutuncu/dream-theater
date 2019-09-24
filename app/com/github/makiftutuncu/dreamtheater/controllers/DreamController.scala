@@ -3,9 +3,9 @@ package com.github.makiftutuncu.dreamtheater.controllers
 import com.github.makiftutuncu.dreamtheater.services.{DreamService, SessionService, UserService}
 import com.github.makiftutuncu.dreamtheater.utilities.{Maybe, UserContext}
 import com.github.makiftutuncu.dreamtheater.views.CreateDreamRequest
-import javax.inject._
+import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json
-import play.api.mvc._
+import play.api.mvc.{Action, AnyContent, ControllerComponents, Results}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 

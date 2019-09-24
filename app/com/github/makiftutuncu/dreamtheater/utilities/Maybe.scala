@@ -3,7 +3,6 @@ package com.github.makiftutuncu.dreamtheater.utilities
 import com.github.makiftutuncu.dreamtheater.errors.APIError
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.language.higherKinds
 
 object Maybe {
   type M[A]  = Either[APIError, A]

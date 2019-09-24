@@ -7,8 +7,6 @@ import play.api.libs.json.{JsValue, Json, Writes}
 import play.api.mvc.Results.Status
 import play.api.mvc.{RequestHeader, Result, Results}
 
-import scala.language.higherKinds
-
 trait ActionUtils extends Logging {
   def fail(apiError: APIError): Result = Status(apiError.status)(apiError.asJson)
 
@@ -37,7 +35,7 @@ trait ActionUtils extends Logging {
   def logResponse[A, C[_] <: Context[_]](ctx: C[A], response: JsValue, result: Result): Unit = {
     val sb = new StringBuilder(s"Response(${ctx.requestId})\n${ctx.request.method} ${ctx.request.path}")
 
-    appendHeaders(sb, result.header.headers.mapValues(s => Seq(s)))
+    appendHeaders(sb, result.header.headers.view.mapValues(s => Seq(s)).toMap)
 
     sb.append("\n").append(response)
 
@@ -47,7 +45,7 @@ trait ActionUtils extends Logging {
   def logResponse(request: RequestHeader, response: JsValue, result: Result): Unit = {
     val sb = new StringBuilder(s"Response\n${request.method} ${request.path}")
 
-    appendHeaders(sb, result.header.headers.mapValues(s => Seq(s)))
+    appendHeaders(sb, result.header.headers.view.mapValues(s => Seq(s)).toMap)
 
     sb.append("\n").append(response)
 

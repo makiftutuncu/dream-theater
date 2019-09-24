@@ -1,12 +1,8 @@
 package com.github.makiftutuncu.dreamtheater.controllers
 
 import com.github.makiftutuncu.dreamtheater.services.{SessionService, UserService}
-import com.github.makiftutuncu.dreamtheater.utilities.{Context, Maybe}
-import javax.inject._
-import play.api.libs.json.Json
-import play.api.mvc._
-
-import scala.concurrent.ExecutionContext.Implicits.global
+import javax.inject.{Inject, Singleton}
+import play.api.mvc.{Action, AnyContent, ControllerComponents, Request}
 
 @Singleton
 class HomeController @Inject()(userService: UserService,
@@ -18,8 +14,7 @@ class HomeController @Inject()(userService: UserService,
     }
 
   val ping: Action[AnyContent] =
-    publicAction { implicit ctx: Context[AnyContent] =>
-      val body = "pong"
-      Maybe.valueF(Json.toJson(body) -> succeed(body))
+    Action { implicit request: Request[AnyContent] =>
+      Ok("pong")
     }
 }

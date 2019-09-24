@@ -9,7 +9,6 @@ import play.api.libs.json.{JsValue, Reads}
 import play.api.mvc._
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.language.higherKinds
 import scala.util.control.NonFatal
 
 abstract class Controller(userService: UserService,

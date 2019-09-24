@@ -2,36 +2,44 @@ package com.github.makiftutuncu.dreamtheater.controllers
 
 import org.scalatestplus.play._
 import org.scalatestplus.play.guice._
+import play.api.http.MimeTypes
 import play.api.test.Helpers._
 import play.api.test._
 
 class HomeControllerSpec extends PlaySpec with GuiceOneAppPerTest with Injecting {
-  "HomeController" should {
-    "render the home page from a new instance of controller" in {
-      val controller = new HomeController(stubControllerComponents())
+  "Using controller instances" should {
+    lazy val controller = inject[HomeController]
+
+    "render the home page" in {
       val home = controller.home.apply(FakeRequest(GET, "/"))
 
       status(home) mustBe OK
-      contentType(home) mustBe Some("text/plain")
-      contentAsString(home) must include ("Dream Theater is running!")
     }
 
-    "render the home page from the application" in {
-      val controller = inject[HomeController]
-      val home = controller.home.apply(FakeRequest(GET, "/"))
+    "pong" in {
+      val response = controller.ping.apply(FakeRequest(GET, "/"))
 
-      status(home) mustBe OK
-      contentType(home) mustBe Some("text/plain")
-      contentAsString(home) must include ("Dream Theater is running!")
+      status(response)          mustBe OK
+      contentType(response)     mustBe Some(MimeTypes.TEXT)
+      contentAsString(response) mustBe "pong"
     }
+  }
 
-    "render the home page from the router" in {
+  "Using router" should {
+    "render the home page" in {
       val request = FakeRequest(GET, "/")
-      val home = route(app, request).get
+      val response = route(app, request).get
 
-      status(home) mustBe OK
-      contentType(home) mustBe Some("text/plain")
-      contentAsString(home) must include ("Dream Theater is running!")
+      status(response) mustBe OK
+    }
+
+    "pong" in {
+      val request = FakeRequest(GET, "/ping")
+      val response = route(app, request).get
+
+      status(response)          mustBe OK
+      contentType(response)     mustBe Some(MimeTypes.TEXT)
+      contentAsString(response) mustBe "pong"
     }
   }
 }

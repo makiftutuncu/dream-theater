@@ -4,9 +4,9 @@ import com.github.makiftutuncu.dreamtheater.models.Session
 import com.github.makiftutuncu.dreamtheater.services.{SessionService, UserService}
 import com.github.makiftutuncu.dreamtheater.utilities.{Context, Maybe, UserContext}
 import com.github.makiftutuncu.dreamtheater.views.{LoginUserRequest, RegisterUserRequest}
-import javax.inject._
+import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json
-import play.api.mvc._
+import play.api.mvc.{Action, AnyContent, ControllerComponents}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
