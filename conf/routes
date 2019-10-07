@@ -7,3 +7,6 @@ GET         /users/me           com.github.makiftutuncu.dreamtheater.controllers
 
 GET         /dreams     com.github.makiftutuncu.dreamtheater.controllers.DreamController.getAll(page: Option[Int], pageCount: Option[Int])
 POST        /dreams     com.github.makiftutuncu.dreamtheater.controllers.DreamController.create
+
+GET         /genders        com.github.makiftutuncu.dreamtheater.controllers.GenderController.getAll
+GET         /genders/:key   com.github.makiftutuncu.dreamtheater.controllers.GenderController.get(key)
