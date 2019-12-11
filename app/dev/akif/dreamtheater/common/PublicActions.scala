@@ -14,13 +14,18 @@ trait PublicActions extends ActionUtils { self: Controller =>
       publicAction[AnyContent, Result](request, action, { result: Result => result })
     }
 
-  def publicAction[I: Reads](action: Ctx[I] => Z[Result]): Action[I] =
-    Action(json[I]).async { request: Request[I] =>
+  def publicAction[O: Writes](action: Ctx[AnyContent] => Z[O]): Action[AnyContent] =
+    Action.async { request: Request[AnyContent] =>
+      publicAction[AnyContent, O](request, action, { out: O => asJson(out) })
+    }
+
+  def publicActionParsing[I: Reads](action: Ctx[I] => Z[Result]): Action[I] =
+    Action(parseJson[I]).async { request: Request[I] =>
       publicAction[I, Result](request, action, { result: Result => result })
     }
 
-  def publicAction[I: Reads, O: Writes](action: Ctx[I] => Z[O]): Action[I] =
-    Action(json[I]).async { request: Request[I] =>
+  def publicActionParsing[I: Reads, O: Writes](action: Ctx[I] => Z[O]): Action[I] =
+    Action(parseJson[I]).async { request: Request[I] =>
       publicAction[I, O](request, action, { out: O => asJson(out) })
     }
 

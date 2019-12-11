@@ -6,19 +6,42 @@ import dev.akif.dreamtheater.Z
 import dev.akif.dreamtheater.auth.PasswordUtils
 import dev.akif.dreamtheater.common.base.Service
 import dev.akif.dreamtheater.common.{Errors, ZDT}
-import dev.akif.dreamtheater.session.{Session, SessionService}
-import play.api.Logging
-import zio.ZIO
+import dev.akif.dreamtheater.session.{Session, SessionRepository, SessionService}
+import play.api.db.Database
 
 class UserService(passwordUtils: PasswordUtils,
                   userRepository: UserRepository,
-                  sessionService: SessionService) extends Service with Logging {
-  def getById(id: UUID): Z[Option[User]] = userRepository.getById(id)
+                  sessionRepository: SessionRepository,
+                  sessionService: SessionService,
+                  db: Database) extends Service(db) {
+  def getById(id: UUID): Z[Option[User]] =
+    withDB { implicit connection =>
+      userRepository.getById(id)
+    }
 
-  def register(request: RegisterUserRequest): Z[(User, Session)] = {
-    val salt = passwordUtils.generateSalt()
+  def register(request: RegisterUserRequest): Z[(User, Session)] =
+    withDBTransaction { implicit connection =>
+      for {
+        user    <- userRepository.insert(buildUser(request, passwordUtils.generateSalt()))
+        session <- sessionRepository.insert(sessionService.buildSession(user.id))
+      } yield {
+        user -> session
+      }
+    }
 
-    val newUser = User(
+  def login(request: LoginUserRequest): Z[(User, Session)] =
+    withDB { implicit connection =>
+      for {
+        user     <- userRepository.getByEmail(request.email) failIfNone Errors.invalidLogin
+        password  = passwordUtils.hash(request.password, user.salt)
+        session  <- if (password != user.password) Z.fail(Errors.invalidLogin) else sessionService.create(user.id)
+      } yield {
+        user -> session
+      }
+    }
+
+  def buildUser(request: RegisterUserRequest, salt: String): User =
+    User(
       id        = UUID.randomUUID,
       email     = request.email,
       password  = passwordUtils.hash(request.password, salt),
@@ -31,31 +54,4 @@ class UserService(passwordUtils: PasswordUtils,
       updatedAt = ZDT.now,
       deletedAt = None
     )
-
-    for {
-      user    <- userRepository.insert(newUser)
-      session <- sessionService.create(user.id)
-    } yield {
-      user -> session
-    }
-  }
-
-  def login(request: LoginUserRequest): Z[(User, Session)] =
-    userRepository.getByEmail(request.email).flatMap {
-      case None =>
-        logger.warn(s"User is not found for email '${request.email}'")
-        ZIO.fail(Errors.invalidLogin)
-
-      case Some(user) =>
-        val password = passwordUtils.hash(request.password, user.salt)
-
-        if (password != user.password) {
-          logger.warn(s"User password is invalid for email '${request.email}'")
-          ZIO.fail(Errors.invalidLogin)
-        } else {
-          sessionService.create(user.id).map { session =>
-            user -> session
-          }
-        }
-    }
 }

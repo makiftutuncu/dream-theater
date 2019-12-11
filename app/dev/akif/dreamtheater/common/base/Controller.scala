@@ -2,30 +2,25 @@ package dev.akif.dreamtheater.common.base
 
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
-import dev.akif.dreamtheater.Z
+import dev.akif.dreamtheater.{Z, ZIOOptionExtensions}
 import dev.akif.dreamtheater.auth.{Ctx, UserCtx}
 import dev.akif.dreamtheater.common.{ActionUtils, Errors}
 import play.api.http.{ContentTypes, HeaderNames}
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
 import play.api.mvc._
-import zio.{Runtime, ZIO}
+import zio.Runtime
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 abstract class Controller(cc: ControllerComponents)(implicit val runtime: Runtime[_]) extends AbstractController(cc) with ActionUtils {
   protected def getBearerToken(request: Request[_]): Z[String] =
-    ZIO.succeed(request.headers.get(HeaderNames.AUTHORIZATION)).flatMap {
-      case None =>
-        ZIO.fail(Errors.unauthorized("Token is missing"))
-
-      case Some(h) =>
-        if (!h.startsWith("Bearer ")) {
-          ZIO.fail(Errors.unauthorized("Token is not a bearer token"))
-        } else {
-          ZIO.succeed(h.drop(7))
-        }
+    for {
+      header <- Z.succeed(request.headers.get(HeaderNames.AUTHORIZATION)) failIfNone Errors.unauthorized("Token is missing")
+      token  <- if (!header.startsWith("Bearer ")) Z.fail(Errors.unauthorized("Token is not a bearer token")) else Z.succeed(header.drop(7))
+    } yield {
+      token
     }
 
   protected def withRequestId[A](result: Result, ctx: Ctx[A]): Result = result.withHeaders(Ctx.requestIdHeaderName -> ctx.requestId)
@@ -38,7 +33,7 @@ abstract class Controller(cc: ControllerComponents)(implicit val runtime: Runtim
 
   protected def asJson[A: Writes](a: A): Result = asJson(a, OK)
 
-  protected def json[A: Reads]: BodyParser[A] = {
+  protected def parseJson[A: Reads]: BodyParser[A] = {
     def parseBody(bytes: ByteString): Future[Either[Result, A]] =
       Try(Json.parse(bytes.iterator.asInputStream)) match {
         case Failure(parseError) =>

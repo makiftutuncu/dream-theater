@@ -33,13 +33,13 @@ class Components(ctx: Context) extends BuiltInComponentsFromContext(ctx)
 
   lazy val passwordUtils: PasswordUtils = new PasswordUtils(configuration)
 
-  lazy val sessionRepository: SessionRepository = new SessionRepository(database)
-  lazy val userRepository: UserRepository       = new UserRepository(database)
-  lazy val dreamRepository: DreamRepository     = new DreamRepository(database)
+  lazy val sessionRepository: SessionRepository = new SessionRepository
+  lazy val userRepository: UserRepository       = new UserRepository
+  lazy val dreamRepository: DreamRepository     = new DreamRepository
 
-  lazy val sessionService: SessionService = new SessionService(sessionRepository)
-  lazy val userService: UserService       = new UserService(passwordUtils, userRepository, sessionService)
-  lazy val dreamService: DreamService     = new DreamService(dreamRepository)
+  lazy val sessionService: SessionService = new SessionService(sessionRepository, database)
+  lazy val userService: UserService       = new UserService(passwordUtils, userRepository, sessionRepository, sessionService, database)
+  lazy val dreamService: DreamService     = new DreamService(dreamRepository, database)
 
   lazy val rootController: RootController   = new RootController(controllerComponents)
   lazy val userController: UserController   = new UserController(userService, sessionService, controllerComponents)

@@ -5,13 +5,21 @@ import java.util.UUID
 import dev.akif.dreamtheater.Z
 import dev.akif.dreamtheater.common.ZDT
 import dev.akif.dreamtheater.common.base.Service
-import play.api.Logging
+import play.api.db.Database
 
-class DreamService(dreamRepository: DreamRepository) extends Service with Logging {
-  def getDreams(userId: UUID, page: Int, pageCount: Int): Z[List[Dream]] = dreamRepository.getByUserId(userId, page, pageCount)
+class DreamService(dreamRepository: DreamRepository, db: Database) extends Service(db) {
+  def getDreams(userId: UUID, page: Int, pageCount: Int): Z[List[Dream]] =
+    withDB { implicit connection =>
+      dreamRepository.getByUserId(userId, page, pageCount)
+    }
 
-  def create(userId: UUID, request: CreateDreamRequest): Z[Dream] = {
-    val newDream = Dream(
+  def create(userId: UUID, request: CreateDreamRequest): Z[Dream] =
+    withDB { implicit connection =>
+      dreamRepository.insert(buildDream(userId, request))
+    }
+
+  def buildDream(userId: UUID, request: CreateDreamRequest): Dream =
+    Dream(
       id            = UUID.randomUUID,
       userId        = userId,
       title         = request.title,
@@ -21,7 +29,4 @@ class DreamService(dreamRepository: DreamRepository) extends Service with Loggin
       updatedAt     = ZDT.now,
       deletedAt     = None
     )
-
-    dreamRepository.insert(newDream)
-  }
 }

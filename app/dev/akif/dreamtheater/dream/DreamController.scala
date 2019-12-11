@@ -13,12 +13,12 @@ class DreamController(dreamService: DreamService,
                       override val sessionService: SessionService,
                       cc: ControllerComponents)(override implicit val runtime: Runtime[_]) extends Controller(cc) with UserActions {
   def getAll(page: Option[Int], pageCount: Option[Int]): Action[AnyContent] =
-    userAction { ctx: UserCtx[AnyContent] =>
+    userAction[List[Dream]] { ctx: UserCtx[AnyContent] =>
       dreamService.getDreams(ctx.user.id, page.getOrElse(0), pageCount.getOrElse(1))
     }
 
   val create: Action[CreateDreamRequest] =
-    userAction[CreateDreamRequest] { ctx: UserCtx[CreateDreamRequest] =>
+    userActionParsing[CreateDreamRequest] { ctx: UserCtx[CreateDreamRequest] =>
       dreamService.create(ctx.user.id, ctx.body).map { dream =>
         succeed(dream, Results.Created)
       }

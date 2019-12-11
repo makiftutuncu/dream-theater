@@ -21,13 +21,18 @@ trait UserActions extends ActionUtils { self: Controller =>
       userAction[AnyContent, Result](request, action, { result: Result => result })
     }
 
-  def userAction[I: Reads](action: UserCtx[I] => Z[Result]): Action[I] =
-    Action(json[I]).async { request: Request[I] =>
+  def userAction[O: Writes](action: UserCtx[AnyContent] => Z[O]): Action[AnyContent] =
+    Action.async { request: Request[AnyContent] =>
+      userAction[AnyContent, O](request, action, { out: O => asJson(out) })
+    }
+
+  def userActionParsing[I: Reads](action: UserCtx[I] => Z[Result]): Action[I] =
+    Action(parseJson[I]).async { request: Request[I] =>
       userAction[I, Result](request, action, { result: Result => result })
     }
 
-  def userAction[I: Reads, O: Writes](action: UserCtx[I] => Z[O]): Action[I] =
-    Action(json[I]).async { request: Request[I] =>
+  def userActionParsing[I: Reads, O: Writes](action: UserCtx[I] => Z[O]): Action[I] =
+    Action(parseJson[I]).async { request: Request[I] =>
       userAction[I, O](request, action, { out: O => asJson(out) })
     }
 
@@ -37,8 +42,8 @@ trait UserActions extends ActionUtils { self: Controller =>
     zioToFuture {
       for {
         token   <- getBearerToken(request)
-        session <- sessionService.getByToken(token)    noneZ Errors.unauthorized("Invalid session id")
-        user    <- userService.getById(session.userId) noneZ Errors.unauthorized("Invalid user id in session")
+        session <- sessionService.getByToken(token)    failIfNone Errors.unauthorized("Invalid session id")
+        user    <- userService.getById(session.userId) failIfNone Errors.unauthorized("Invalid user id in session")
         ctx      = new UserCtx(request, user, session)
         out     <- action(ctx)
       } yield {
