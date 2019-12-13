@@ -1,5 +1,6 @@
 package dev.akif.dreamtheater
 
+import akka.stream.Materializer
 import dev.akif.dreamtheater.auth.PasswordUtils
 import dev.akif.dreamtheater.dream.{DreamController, DreamRepository, DreamService}
 import dev.akif.dreamtheater.session.{SessionRepository, SessionService}
@@ -17,6 +18,8 @@ import router.Routes
 import zio.Runtime
 import zio.internal.PlatformLive
 
+import scala.concurrent.ExecutionContext
+
 class Components(ctx: Context) extends BuiltInComponentsFromContext(ctx)
                                   with DBComponents
                                   with EvolutionsComponents
@@ -24,6 +27,8 @@ class Components(ctx: Context) extends BuiltInComponentsFromContext(ctx)
                                   with HttpFiltersComponents
                                   with Logging {
   implicit val runtime: Runtime[Any] = Runtime[Any](null, PlatformLive.Default)
+  implicit val m: Materializer       = materializer
+  implicit val ec: ExecutionContext  = ExecutionContext.global
 
   override lazy val httpErrorHandler: HttpErrorHandler = new ErrorHandler
 

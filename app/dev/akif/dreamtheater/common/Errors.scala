@@ -17,7 +17,18 @@ object Errors {
   lazy val invalidLogin: E = e401.name("unauthorized").message("Invalid login credentials")
 
   def database(message: String): E = e500.name("database").message(message)
-  
+
+  lazy val unknown: E = e500.name("unknown")
+
+  def byStatusCode(statusCode: Int): E =
+    statusCode match {
+      case Status.BAD_REQUEST           => e400
+      case Status.UNAUTHORIZED          => e401
+      case Status.NOT_FOUND             => e404
+      case Status.INTERNAL_SERVER_ERROR => e404
+      case _                            => unknown
+    }
+
   object PSQL {
     object UniqueKeyInsert {
       private val regex = "Key \\((.+)\\)=\\((.+)\\) already exists".r

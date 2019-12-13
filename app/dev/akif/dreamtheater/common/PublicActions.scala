@@ -1,39 +1,72 @@
 package dev.akif.dreamtheater.common
 
+import akka.stream.Materializer
 import dev.akif.dreamtheater.Z
 import dev.akif.dreamtheater.auth.Ctx
 import dev.akif.dreamtheater.common.base.Controller
 import play.api.libs.json.{Reads, Writes}
-import play.api.mvc.{Action, AnyContent, Request, Result}
+import play.api.mvc._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait PublicActions extends ActionUtils { self: Controller =>
+  implicit val m: Materializer
+  implicit val ec: ExecutionContext
+
   def publicAction(action: Ctx[AnyContent] => Z[Result]): Action[AnyContent] =
     Action.async { request: Request[AnyContent] =>
-      publicAction[AnyContent, Result](request, action, { result: Result => result })
+      publicAction[Result](request, action, { result: Result => result })
     }
 
-  def publicAction[O: Writes](action: Ctx[AnyContent] => Z[O]): Action[AnyContent] =
+  def publicActionReturning[O: Writes](action: Ctx[AnyContent] => Z[O]): Action[AnyContent] =
     Action.async { request: Request[AnyContent] =>
-      publicAction[AnyContent, O](request, action, { out: O => asJson(out) })
+      publicAction[O](request, action, { out: O => asJson(out) })
     }
 
-  def publicActionParsing[I: Reads](action: Ctx[I] => Z[Result]): Action[I] =
-    Action(parseJson[I]).async { request: Request[I] =>
-      publicAction[I, Result](request, action, { result: Result => result })
+  def publicActionParsing[I: Reads](action: Ctx[I] => Z[Result]): Action[AnyContent] =
+    Action.async { request: Request[AnyContent] =>
+      publicActionParsing[I, Result](request, action, { result: Result => result })
     }
 
-  def publicActionParsing[I: Reads, O: Writes](action: Ctx[I] => Z[O]): Action[I] =
-    Action(parseJson[I]).async { request: Request[I] =>
-      publicAction[I, O](request, action, { out: O => asJson(out) })
+  def publicActionParsingAndReturning[I: Reads, O: Writes](action: Ctx[I] => Z[O]): Action[AnyContent] =
+    Action.async { request: Request[AnyContent] =>
+      publicActionParsing[I, O](request, action, { out: O => asJson(out) })
     }
 
-  private def publicAction[I, O](request: Request[I], action: Ctx[I] => Z[O], toResult: O => Result): Future[Result] =
+  private def publicAction[O](request: Request[AnyContent],
+                              action: Ctx[AnyContent] => Z[O],
+                              toResult: O => Result): Future[Result] =
     zioToFuture {
-      val ctx = new Ctx(request)
-      action(ctx).map { out =>
-        withRequestId(toResult(out), ctx)
+      val requestId = Ctx.getOrCreateRequestId(request)
+      val ctx       = new Ctx[AnyContent](request, AnyContentAsEmpty, requestId)
+
+      val zio = for {
+        _      <- Z.succeed(logRequestSuccess(request, requestId, ""))
+        out    <- action(ctx)
+        result  = toResult(out)
+      } yield {
+        (ctx, out, result)
       }
+
+      finishRequest(request, requestId, zio)
+    }
+
+  private def publicActionParsing[I: Reads, O](request: Request[AnyContent],
+                                               action: Ctx[I] => Z[O],
+                                               toResult: O => Result): Future[Result] =
+    zioToFuture {
+      val requestId = Ctx.getOrCreateRequestId(request)
+
+      val zio = for {
+        in     <- parseJson[I](request).mapError { e => logRequestError(request, requestId, e); e }
+        ctx     = new Ctx[I](request, in, requestId)
+        _      <- Z.succeed(logRequestSuccess(request, requestId, in))
+        out    <- action(ctx)
+        result  = toResult(out)
+      } yield {
+        (ctx, out, result)
+      }
+
+      finishRequest(request, requestId, zio)
     }
 }
