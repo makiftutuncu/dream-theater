@@ -1,9 +1,9 @@
-GET         /           com.github.makiftutuncu.dreamtheater.controllers.HomeController.home
-GET         /ping       com.github.makiftutuncu.dreamtheater.controllers.HomeController.ping
+GET         /                   dev.akif.dreamtheater.RootController.home
+GET         /ping               dev.akif.dreamtheater.RootController.ping
 
-POST        /users/register     com.github.makiftutuncu.dreamtheater.controllers.UserController.register
-POST        /users/login        com.github.makiftutuncu.dreamtheater.controllers.UserController.login
-GET         /users/me           com.github.makiftutuncu.dreamtheater.controllers.UserController.me
+POST        /users/register     dev.akif.dreamtheater.user.UserController.register
+POST        /users/login        dev.akif.dreamtheater.user.UserController.login
+GET         /users/me           dev.akif.dreamtheater.user.UserController.me
 
-GET         /dreams     com.github.makiftutuncu.dreamtheater.controllers.DreamController.getAll(page: Option[Int], pageCount: Option[Int])
-POST        /dreams     com.github.makiftutuncu.dreamtheater.controllers.DreamController.create
+GET         /dreams             dev.akif.dreamtheater.dream.DreamController.getAll(page: Option[Int], pageCount: Option[Int])
+POST        /dreams             dev.akif.dreamtheater.dream.DreamController.create
